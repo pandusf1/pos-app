@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Barang;
 use App\Models\Konsumen;
 use App\Models\Jual;
-use App\Models\DJual;
+use App\Models\Djual;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -52,7 +52,7 @@ class PenjualanController extends Controller
                     );
                 }
 
-                DJual::create([
+                Djual::create([
                     'no_jual'    => $no,
                     'kd_brg'     => $item['kd_brg'],
                     'harga_jual' => $harga,
