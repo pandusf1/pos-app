@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -8,38 +9,46 @@ use Illuminate\Support\Facades\Hash;
 
 class RegisterController extends Controller
 {
-public function showRegisterForm()    {
+    // Menampilkan halaman form register
+    public function showRegisterForm()
+    {
         return view('auth.register');
     }
 
+    // Proses pendaftaran
     public function register(Request $request)
     {
+        // 1. Validasi Input
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
             'password' => 'required|confirmed|min:6',
-            'role' => 'required|in:admin,kasir',
+            'role'     => 'required', 
+            'avatar'   => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Validasi foto
         ]);
 
-        // 🔐 proteksi admin
-        if ($request->role === 'admin') {
-            if ($request->admin_code !== env('ADMIN_REGISTER_CODE')) {
-                return back()->withErrors([
-                    'admin_code' => 'Kode admin tidak valid'
-                ])->withInput();
-            }
+        // 2. Siapkan variabel untuk URL foto
+        // Default pakai gambar kosong atau null
+        $avatarUrl = null; 
+
+        // 3. Cek apakah user meng-upload foto?
+        if ($request->hasFile('avatar')) {
+            // Upload ke Cloudinary (folder 'avatars')
+            $upload = $request->file('avatar')->storeOnCloudinary('avatars');
+            
+            // Ambil URL HTTPS yang aman
+            $avatarUrl = $upload->getSecurePath();
         }
 
-        // Buat user
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+        // 4. Simpan ke Database
+        User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'role'     => $request->role,
+            'avatar'   => $avatarUrl, // URL dari Cloudinary masuk sini
         ]);
 
-        // 🔹 Tidak login otomatis
-        return redirect()->route('login')
-            ->with('success', 'Akun berhasil dibuat, silakan login');
+        return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan login.');
     }
 }
