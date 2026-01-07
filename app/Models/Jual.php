@@ -25,6 +25,6 @@ class Jual extends Model
 
     public function detail()
     {
-        return $this->hasMany(DJual::class, 'no_jual', 'no_jual');
+        return $this->hasMany(Djual::class, 'no_jual', 'no_jual');
     }
 }
