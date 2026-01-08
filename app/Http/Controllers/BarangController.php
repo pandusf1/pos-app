@@ -116,11 +116,11 @@ class BarangController extends Controller
 
         if ($request->hasFile('gambar')) {
             // Hapus gambar lama (opsional, tergantung kebutuhan)
-             /*if ($barang->gambar && file_exists(public_path('gambar/' . $barang->gambar))) {
+             if ($barang->gambar && file_exists(public_path('gambar/' . $barang->gambar))) {
                 unlink(public_path('gambar/' . $barang->gambar));
             }
             
-            $file = $request->file('gambar'); */
+            $file = $request->file('gambar'); 
             // Ganti preg_replace dengan yang lebih sederhana
             $filename = time() . '_' . $file->getClientOriginalName();
             $file->move(public_path('gambar'), $filename);
