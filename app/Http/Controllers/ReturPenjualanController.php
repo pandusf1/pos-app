@@ -14,7 +14,23 @@ class ReturPenjualanController extends Controller
     // HALAMAN RETUR PENJUALAN
     public function index()
     {
-        $penjualan = Jual::with('detail')->get();
+        $penjualan = Jual::with('detail')->get()->map(function ($jual) {
+            $totalSisa = 0;
+
+            foreach ($jual->detail as $d) {
+                $sudahDiretur = \App\Models\DReturJual::where('kd_brg', $d->kd_brg)
+                    ->whereHas('retur', function ($q) use ($jual) {
+                        $q->where('no_jual', $jual->no_jual);
+                    })
+                    ->sum('qty_retur');
+
+                $totalSisa += max(0, $d->jml_jual - $sudahDiretur);
+            }
+
+            $jual->masih_bisa_retur = $totalSisa > 0;
+            return $jual;
+        });
+
         return view('retur_jual.index', compact('penjualan'));
     }
 
@@ -47,7 +63,7 @@ class ReturPenjualanController extends Controller
                 $total = 0;
 
                 foreach ($jual->detail as $d) {
-
+ 
                     $qtyRetur = $request->qty_retur[$d->kd_brg] ?? 0;
 
                     if ($qtyRetur > 0) {
