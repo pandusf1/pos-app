@@ -1,8 +1,8 @@
 @extends('layout')
 
 @section('content')
-<div class="container-fluid px-4">
-    <h4 class="fw-bold mb-3">Retur Pembelian</h4>
+<div class="glass-card">
+    <h1 class="page-title mb-3">Retur Pembelian</h1>
 
     @if(session('success'))
         <div class="alert alert-success">
@@ -12,23 +12,25 @@
 
     <div id="form-retur">
     <input type="hidden" name="_token" value="{{ csrf_token() }}">
-
-
-        <div class="mb-3">
-            <label class="form-label">No Pembelian</label>
-            <select name="no_beli" id="no_beli" class="form-control" >
+        <div class="card mb-3">
+            <div class="card-body">
+            <label class="form-label fw-bold">No Pembelian</label>
+            <select id="no_beli" class="form-control">
                 <option value="">-- Pilih Nota --</option>
                 @foreach($pembelian as $b)
-                    <option value="{{ $b->no_beli }}">
+                    <option value="{{ $b->no_beli }}"
+                        {{ !$b->masih_bisa_retur ? 'disabled' : '' }}>
                         {{ $b->no_beli }} | {{ $b->tgl_beli }}
+                        {{ !$b->masih_bisa_retur ? ' (FULL RETUR)' : '' }}
                     </option>
                 @endforeach
             </select>
+            </div>
         </div>
 
         @foreach($pembelian as $beli)
-        <div class="card mb-3 detail-beli" id="detail-{{ $beli->no_beli }}" style="display:none;">
-            <div class="card-header bg-light fw-bold">
+        <div class="card mb-3 detail-beli shadow-sm" id="detail-{{ $beli->no_beli }}" style="display:none;">
+            <div class="card-header bg-white fw-semibold">
                 No Pembelian: {{ $beli->no_beli }}
             </div>
             <div class="card-body p-2">
@@ -36,23 +38,30 @@
                 <thead class="table-light">
                     <tr>
                         <th width="15%">Kode Barang</th>
-                        <th width="20%">Harga</th>
+                        <th width="20%" class="text-end">Harga</th>
                         <th width="15%" class="text-center">Qty Beli</th>
                         <th width="20%" class="text-center">Sudah Retur</th>
                         <th width="30%">Qty Retur</th>
                     </tr>
                 </thead>
-
                     <tbody>
-                        @foreach($beli->detail as $d)
+                    @foreach($beli->detail as $d)
+                    @php
+                        $sudahDiretur = \App\Models\DReturBeli::where('kd_brg', $d->kd_brg)
+                            ->whereHas('retur', function ($q) use ($beli) {
+                                $q->where('no_beli', $beli->no_beli);
+                            })
+                            ->sum('qty_retur');
+
+                        $sisa = $d->jml_beli - $sudahDiretur;
+                    @endphp
+
                         <tr>
                             <td>{{ $d->kd_brg }}</td>
-                            <td>{{ number_format($d->harga_beli) }}</td>
-                            <td>{{ $d->jml_beli }}</td>
+                            <td class="text-end">{{ number_format($d->harga_beli) }}</td>
+                            <td class="text-center">{{ $d->jml_beli }}</td>
                             <td class="text-center">
-                                <span class="badge bg-secondary">
-                                    {{ $d->sudah_diretur }}
-                                </span>
+                                <span class="badge bg-secondary">{{ $sudahDiretur }}</span>
                             </td>
 
                             <td>
@@ -61,20 +70,18 @@
                                         name="qty_retur[{{ $d->kd_brg }}]"
                                         class="form-control text-end"
                                         min="0"
-                                        max="{{ $d->jml_beli - $d->sudah_diretur }}"
+                                        max="{{ $sisa }}"
                                         value="0"
-                                        {{ ($d->jml_beli - $d->sudah_diretur) <= 0 ? 'disabled' : '' }}>
-
+                                        {{ $sisa <= 0 ? 'disabled' : '' }}>
                                     <span class="input-group-text">
-                                        / {{ $d->jml_beli - $d->sudah_diretur }}
+                                        / {{ $sisa }}
                                     </span>
                                 </div>
 
-    @if(($d->jml_beli - $d->sudah_diretur) <= 0)
-        <small class="text-danger">Sudah full retur</small>
-    @endif
-</td>
-
+                                @if($sisa <= 0)
+                                    <small class="text-danger">Sudah full retur</small>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -83,27 +90,27 @@
         </div>
         @endforeach
 
-        <button type="button" class="btn btn-danger" onclick="submitRetur()">
+        <button type="button"
+            class="btn btn-danger"
+            onclick="submitRetur('{{ url('/retur-pembelian/simpan') }}','no_beli')">
             Simpan Retur
         </button>
-
-    
 </div>
 
 <script>
-function submitRetur() {
+function submitRetur(url, noField) {
     let formData = new FormData();
+    let noNota = document.getElementById(noField).value;
 
-    let noBeli = document.getElementById('no_beli').value;
-    if (!noBeli) {
-        alert('Pilih no pembelian terlebih dahulu');
+    if (!noNota) {
+        alert('Pilih nota terlebih dahulu');
         return;
     }
 
-    let activeCard = document.getElementById('detail-' + noBeli);
+    let activeCard = document.getElementById('detail-' + noNota);
 
     formData.append('_token', "{{ csrf_token() }}");
-    formData.append('no_beli', noBeli);
+    formData.append(noField, noNota);
 
     activeCard.querySelectorAll('input').forEach(el => {
         if (el.name && parseInt(el.value) > 0) {
@@ -111,26 +118,18 @@ function submitRetur() {
         }
     });
 
-    fetch("{{ url('/retur-pembelian/simpan') }}", {
+    fetch(url, {
         method: "POST",
         body: formData
     })
-    .then(res => res.json())   // ✅ BACA JSON
+    .then(res => res.json())
     .then(res => {
-        if (res.status === 'success') {
-            alert(res.message);
-            window.location.reload();
-        } else {
-            alert(res.message);
-        }
+        alert(res.message);
+        if (res.status === 'success') location.reload();
     })
-    .catch(err => {
-        console.error(err);
-        alert('Terjadi kesalahan server');
-    });
+    .catch(() => alert('Terjadi kesalahan server'));
 }
 </script>
-
 
 <script>
 document.getElementById('no_beli').addEventListener('change', function () {
