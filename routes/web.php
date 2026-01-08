@@ -84,8 +84,8 @@ Route::middleware(['auth', 'role:admin,kasir'])->group(function () {
             ->name('cetak');
     });
  
-// RETUR PENJUALAN - KASIR
-Route::middleware(['auth','role:kasir'])->group(function () {
+// RETUR PENJUALAN - ADMIN
+Route::middleware(['auth','role:admin'])->group(function () {
     Route::prefix('retur-penjualan')->name('retur.penjualan.')->group(function () {
         Route::get('/', [ReturPenjualanController::class, 'index'])->name('index');
         Route::post('/simpan', [ReturPenjualanController::class, 'store'])->name('store');
