@@ -14,10 +14,26 @@ class ReturPembelianController extends Controller
 {
     // HALAMAN RETUR PEMBELIAN
     public function index()
-{
-    $pembelian = Beli::with('detail')->get();
-    return view('retur_beli.index', compact('pembelian'));
-}
+    {
+        $pembelian = Beli::with('detail')->get()->map(function ($beli) {
+            $totalSisa = 0;
+
+            foreach ($beli->detail as $d) {
+                $sudahDiretur = \App\Models\DReturBeli::where('kd_brg', $d->kd_brg)
+                    ->whereHas('retur', function ($q) use ($beli) {
+                        $q->where('no_beli', $beli->no_beli);
+                    })
+                    ->sum('qty_retur');
+
+                $totalSisa += max(0, $d->jml_beli - $sudahDiretur);
+            }
+
+            $beli->masih_bisa_retur = $totalSisa > 0;
+            return $beli;
+        });
+
+        return view('retur_beli.index', compact('pembelian'));
+    }
 
     // SIMPAN RETUR PEMBELIAN
     public function store(Request $request)
@@ -42,13 +58,14 @@ class ReturPembelianController extends Controller
                 ]);
     
                 $total = 0;
+                $adaRetur = false;
     
                 foreach ($pembelian->detail as $d) {
-
                     $qtyRetur = $request->qty_retur[$d->kd_brg] ?? 0;
-                
                     if ($qtyRetur > 0) {
-                
+                        
+                        $adaRetur = true;
+
                         // 🔴 HITUNG YANG SUDAH DIRETUR
                         $sudahDiretur = DReturBeli::where('kd_brg', $d->kd_brg)
                             ->whereHas('retur', function ($q) use ($pembelian) {
@@ -63,7 +80,7 @@ class ReturPembelianController extends Controller
                                 "Qty retur {$d->kd_brg} melebihi sisa. Sisa: {$sisa}"
                             );
                         }
-                
+                 
                         $subtotal = $qtyRetur * $d->harga_beli;
                 
                         DReturBeli::create([
@@ -79,6 +96,10 @@ class ReturPembelianController extends Controller
                 
                         $total += $subtotal;
                     }
+                } 
+                
+                if (!$adaRetur) {
+                    throw new \Exception('Tidak ada barang yang diretur');
                 }                
     
                 $retur->update(['total_retur' => $total]);
