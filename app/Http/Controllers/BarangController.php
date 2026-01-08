@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Exports\BarangLaporanExport; // Import Export Class
 use Maatwebsite\Excel\Facades\Excel; // Untuk ekspor Excel
 use PDF; // Pastikan package PDF terinstal (misalnya, barryvdh/laravel-dompdf)
-
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 class BarangController extends Controller
 {
     /**
@@ -64,8 +64,8 @@ class BarangController extends Controller
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
             $namaFile = time() . '_' . $file->getClientOriginalName();
-            
-            $barang->gambar = null;
+            $file->move(public_path('gambar'), $namaFile);
+            $barang->gambar = $namaFile;
         }
 
         $barang->save();
@@ -116,11 +116,11 @@ class BarangController extends Controller
 
         if ($request->hasFile('gambar')) {
             // Hapus gambar lama (opsional, tergantung kebutuhan)
-             if ($barang->gambar && file_exists(public_path('gambar/' . $barang->gambar))) {
+            if ($barang->gambar && file_exists(public_path('gambar/' . $barang->gambar))) {
                 unlink(public_path('gambar/' . $barang->gambar));
             }
             
-            $file = $request->file('gambar'); 
+            $file = $request->file('gambar');
             // Ganti preg_replace dengan yang lebih sederhana
             $filename = time() . '_' . $file->getClientOriginalName();
             $file->move(public_path('gambar'), $filename);
