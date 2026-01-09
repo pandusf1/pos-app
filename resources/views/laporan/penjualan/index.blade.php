@@ -93,7 +93,7 @@ function sortLink($label, $field) {
                 <tr>
                     <th class="text-center">No Jual</th>
                     <th class="text-center">Tanggal</th>
-                    <th>Jenis</th>
+                    
                     <th>Konsumen</th>
                     <th>Barang</th>
                     <th class="text-center">Qty</th>
