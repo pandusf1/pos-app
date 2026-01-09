@@ -120,8 +120,16 @@ class BarangController extends Controller
                 unlink(public_path('gambar/' . $barang->gambar));
             }
             
-if ($request->hasFile('gambar')) {
-            // ✅ GANTI DENGAN LOGIKA UPLOAD CLOUDINARY:
+// Cek apakah user upload gambar baru?
+        if ($request->hasFile('gambar')) {
+
+            // ❌ BAGIAN INI WAJIB DIHAPUS / DIKOMENTARI:
+            // if ($barang->gambar && file_exists(public_path('gambar/' . $barang->gambar))) {
+            //    unlink(public_path('gambar/' . $barang->gambar));
+            // }
+            // Alasannya: Di Vercel kita tidak boleh hapus file bawaan (Read-only error).
+
+            // ✅ LANGSUNG UPLOAD KE CLOUDINARY:
             $upload = $request->file('gambar')->storeOnCloudinary('produk');
             $data['gambar'] = $upload->getSecurePath();
         }
