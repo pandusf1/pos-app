@@ -120,11 +120,14 @@ class BarangController extends Controller
                 unlink(public_path('gambar/' . $barang->gambar));
             }
             
-            $file = $request->file('gambar');
-            // Ganti preg_replace dengan yang lebih sederhana
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('gambar'), $filename);
-            $data['gambar'] = $filename; // Simpan nama file ke array data
+// ✅ GANTI JADI INI:
+if ($request->hasFile('gambar')) {
+    // Upload ke Cloudinary (folder 'produk')
+    $upload = $request->file('gambar')->storeOnCloudinary('produk');
+    
+    // Ambil URL Lengkap (https://res.cloudinary...)
+    $data['gambar'] = $upload->getSecurePath();
+}
         }
 
         $barang->update($data);
