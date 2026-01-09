@@ -120,14 +120,11 @@ class BarangController extends Controller
                 unlink(public_path('gambar/' . $barang->gambar));
             }
             
-// ✅ GANTI JADI INI:
 if ($request->hasFile('gambar')) {
-    // Upload ke Cloudinary (folder 'produk')
-    $upload = $request->file('gambar')->storeOnCloudinary('produk');
-    
-    // Ambil URL Lengkap (https://res.cloudinary...)
-    $data['gambar'] = $upload->getSecurePath();
-}
+            // ✅ GANTI DENGAN LOGIKA UPLOAD CLOUDINARY:
+            $upload = $request->file('gambar')->storeOnCloudinary('produk');
+            $data['gambar'] = $upload->getSecurePath();
+        }
         }
 
         $barang->update($data);
