@@ -110,6 +110,7 @@
         align-items: center;
         justify-content: center;
         transition: .2s ease;
+        text-decoration: none; /* Hilangkan garis bawah link */
     }
 
     .btn-edit {
@@ -121,6 +122,7 @@
         border: 1px solid #ef4444;
         color: #ef4444;
         background: transparent;
+        cursor: pointer;
     }
 
     .btn-delete:hover {
@@ -130,6 +132,23 @@
 </style>
 
 <div class="glass-card">
+
+    {{-- Alert Sukses (Saya pindah ke atas biar kelihatan user) --}}
+    @if(session('success'))
+        <div id="successAlert" class="alert alert-success mb-4">
+            {{ session('success') }}
+        </div>
+        <script>
+            setTimeout(() => {
+                const alert = document.getElementById('successAlert');
+                if (alert) {
+                    alert.style.transition = 'opacity .5s';
+                    alert.style.opacity = 0;
+                    setTimeout(() => alert.remove(), 500);
+                }
+            }, 3000);
+        </script>
+    @endif
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="page-title mb-0">Pengelolaan Data Barang</h4>
@@ -177,15 +196,25 @@
                     Rp {{ number_format($b->harga_jual, 0, ',', '.') }}
                 </td>
                 <td class="stok">{{ $b->stok }}</td>
+                
+                {{-- 🛠️ BAGIAN INI YANG DIPERBAIKI --}}
                 <td>
                     @if($b->gambar)
-                        <img src="{{ asset('gambar/' . $b->gambar) }}" class="img-barang">
+                        @if(str_contains($b->gambar, 'http'))
+                            {{-- Jika gambar dari Cloudinary (Link Penuh) --}}
+                            <img src="{{ $b->gambar }}" class="img-barang" alt="Produk">
+                        @else
+                            {{-- Jika gambar lokal (Folder Public) --}}
+                            <img src="{{ asset('gambar/' . $b->gambar) }}" class="img-barang" alt="Produk">
+                        @endif
                     @else
                         <span class="text-muted">–</span>
                     @endif
                 </td>
+                {{-- 🛠️ BATAS PERBAIKAN --}}
+
                 <td class="text-center">
-                    <a href="{{ route('barang.edit', $b->kd_brg) }}" class="btn-icon btn-edit">✏️</a>
+                    <a href="{{ route('barang.edit', $b->kd_brg) }}" class="btn-icon btn-edit" title="Edit">✏️</a>
 
                     <form action="{{ route('barang.destroy', $b->kd_brg) }}"
                           method="POST"
@@ -193,14 +222,14 @@
                           onsubmit="return confirm('Hapus data ini?')">
                         @csrf
                         @method('DELETE')
-                        <button class="btn-icon btn-delete">🗑️</button>
+                        <button class="btn-icon btn-delete" title="Hapus">🗑️</button>
                     </form>
                 </td>
             </tr>
         @empty
             <tr>
                 <td colspan="7" class="text-center text-muted py-4">
-                    Belum ada data.
+                    Belum ada data barang.
                 </td>
             </tr>
         @endforelse
@@ -210,20 +239,7 @@
     <div class="d-flex justify-content-center mt-4">
         {{ $barangs->links() }}
     </div>
-@if(session('success'))
-<div id="successAlert" class="alert alert-success">
-    {{ session('success') }}
+
 </div>
 
-<script>
-setTimeout(() => {
-    const alert = document.getElementById('successAlert');
-    if (alert) {
-        alert.style.transition = 'opacity .5s';
-        alert.style.opacity = 0;
-        setTimeout(() => alert.remove(), 500);
-    }
-}, 3000); // 3 detik (lebih manusiawi)
-</script>
-@endif
 @endsection
