@@ -25,11 +25,17 @@ class SocialAuthController extends Controller
             abort(404);
         }
 
-        $socialUser = Socialite::driver($provider)->stateless()->user();
+        try {
+    $socialUser = Socialite::driver($provider)->stateless()->user();
+} catch (\Exception $e) {
+    return redirect('/login')->with('error', 'Gagal login dengan Facebook.');
+        }
+        
 
         $user = User::where('provider', $provider)
             ->where('provider_id', $socialUser->getId())
             ->first();
+        
 
         if (!$user && $socialUser->getEmail()) {
             $user = User::where('email', $socialUser->getEmail())->first();
