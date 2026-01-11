@@ -22,4 +22,10 @@ class ReturJual extends Model
     {
         return $this->hasMany(DReturJual::class, 'no_retur_jual');
     }
+
+    public function jual()
+    {
+        return $this->belongsTo(Jual::class, 'no_jual', 'no_jual');
+    }
+
 }

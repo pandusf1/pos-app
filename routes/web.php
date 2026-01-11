@@ -23,11 +23,7 @@ use App\Http\Controllers\ReturPembelianController;
 */
 Route::get('/', fn () => redirect()->route('login'));
 
-
-Route::get('/login', [AuthController::class, 'login'])
-    ->name('login')
-    ->middleware('guest');
-
+Route::get('/login', [AuthController::class, 'login'])->name('login')->middleware('guest');
 Route::post('/login', [AuthController::class, 'loginProcess']);
 
 Route::get('/register', [RegisterController::class, 'showRegisterForm'])
@@ -36,25 +32,7 @@ Route::get('/register', [RegisterController::class, 'showRegisterForm'])
 
 Route::post('/register', [RegisterController::class, 'register']);
 
-Route::post('/logout', [AuthController::class, 'logout'])
-    ->name('logout');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
-
-
-/*
-|--------------------------------------------------------------------------
-| SOCIAL LOGIN
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/auth/{provider}', [SocialAuthController::class, 'redirect']);
-Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
-
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
@@ -62,66 +40,80 @@ Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 
 /*
 |--------------------------------------------------------------------------
-| TRANSAKSI (PENJUALAN & PEMBELIAN)
+| SOCIAL LOGIN
+|--------------------------------------------------------------------------
+*/
+Route::get('/auth/{provider}', [SocialAuthController::class, 'redirect']);
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
+
+/*
+|--------------------------------------------------------------------------
+| TRANSAKSI
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:admin,kasir'])->group(function () {
 
-    /* ===================== PENJUALAN ===================== */
+    /* PENJUALAN */
     Route::prefix('jual')->name('jual.')->group(function () {
         Route::get('/', [PenjualanController::class, 'index'])->name('index');
         Route::post('/', [PenjualanController::class, 'store'])->name('store');
         Route::get('/{no_jual}', [PenjualanController::class, 'show'])->name('show');
-
-        // 🔥 STRUK OTOMATIS (nota / bukti memorial)
-        Route::get('/{no_jual}/cetak', [PenjualanController::class, 'struk'])
-            ->name('cetak');
+        Route::get('/{no_jual}/cetak', [PenjualanController::class, 'struk'])->name('cetak');
     });
- 
-// RETUR PENJUALAN - ADMIN
-Route::middleware(['auth','role:admin'])->group(function () {
-    Route::prefix('retur-penjualan')->name('retur.penjualan.')->group(function () {
-        Route::get('/', [ReturPenjualanController::class, 'index'])->name('index');
-        Route::post('/simpan', [ReturPenjualanController::class, 'store'])->name('store');
-    });
-});
 
-Route::middleware(['auth'])->group(function () {
-Route::get('/laporan/retur-penjualan', 
-    [ReturPenjualanController::class, 'laporan']
-)->name('laporan.retur.penjualan');
-});
-
-// RETUR PEMBELIAN - ADMIN
-Route::middleware(['auth','role:admin'])->group(function () {
-    Route::prefix('retur-pembelian')->name('retur.pembelian.')->group(function () {
-        Route::get('/', [ReturPembelianController::class, 'index'])->name('index');
-        Route::post('/simpan', [ReturPembelianController::class, 'store'])->name('store');
-    });
-});
-
-Route::middleware(['auth'])->group(function () {
-    Route::get('/laporan/retur-pembelian',
-        [ReturPembelianController::class, 'laporan']
-    )->name('laporan.retur.pembelian');
-});
-    
-    /* ===================== PEMBELIAN ===================== */
+    /* PEMBELIAN */
     Route::prefix('beli')->name('beli.')->group(function () {
         Route::get('/', [PembelianController::class, 'index'])->name('index');
         Route::post('/', [PembelianController::class, 'store'])->name('store');
         Route::get('/{no_beli}', [PembelianController::class, 'show'])->name('show');
-
-        // 🔥 STRUK PEMBELIAN / MEMORIAL
-        Route::get('/{no_beli}/cetak', [PembelianController::class, 'struk'])
-            ->name('cetak');
+        Route::get('/{no_beli}/cetak', [PembelianController::class, 'struk'])->name('cetak');
     });
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| RETUR
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])->group(function () {
+
+    Route::prefix('retur-penjualan')->name('retur.penjualan.')->group(function () {
+        Route::get('/', [ReturPenjualanController::class, 'index'])->name('index');
+        Route::post('/simpan', [ReturPenjualanController::class, 'store'])->name('store');
+    });
+
+    Route::prefix('retur-pembelian')->name('retur.pembelian.')->group(function () {
+        Route::get('/', [ReturPembelianController::class, 'index'])->name('index');
+        Route::post('/simpan', [ReturPembelianController::class, 'store'])->name('store');
+    });
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| LAPORAN RETUR
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->group(function () {
+
+    Route::prefix('laporan/retur-penjualan')->name('laporan.retur.penjualan.')->group(function () {
+        Route::get('/', [ReturPenjualanController::class, 'laporan'])->name('index');
+        Route::get('/pdf', [ReturPenjualanController::class, 'exportPDF'])->name('pdf');
+        Route::get('/excel', [ReturPenjualanController::class, 'exportExcel'])->name('excel');
+    });
+
+    Route::prefix('laporan/retur-pembelian')->name('laporan.retur.pembelian.')->group(function () {
+        Route::get('/', [ReturPembelianController::class, 'laporan'])->name('index');
+        Route::get('/pdf', [ReturPembelianController::class, 'exportPDF'])->name('pdf');
+        Route::get('/excel', [ReturPembelianController::class, 'exportExcel'])->name('excel');
+    });
+
 });
 
 /*
@@ -173,7 +165,4 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/excel', [SupplierController::class, 'laporanExcel'])->name('excel');
     });
 
-    Route::get('/laporan/retur-pembelian', [ReturPembelianController::class, 'laporan'])
-    ->name('laporan.retur.pembelian');
-    
 });

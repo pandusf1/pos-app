@@ -9,6 +9,9 @@ use App\Models\Dbeli;
 use App\Models\Barang;
 use App\Models\ReturBeli;
 use App\Models\DReturBeli;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\LaporanReturPembelianExport;
 
 class ReturPembelianController extends Controller
 {
@@ -134,4 +137,37 @@ class ReturPembelianController extends Controller
 
         return view('retur_beli.laporan', compact('retur'));
     }
+
+    public function exportPDF(Request $request)
+{
+    $query = ReturBeli::with(['detail', 'detail.barang']);
+
+    if ($request->filled('tgl_awal') && $request->filled('tgl_akhir')) {
+        $query->whereBetween('tgl_retur', [
+            $request->tgl_awal,
+            $request->tgl_akhir
+        ]);
+    }
+
+    $retur = $query->orderBy('tgl_retur', 'desc')->get();
+
+    $pdf = Pdf::loadView(
+        'retur_beli.pdf',
+        compact('retur')
+    )->setPaper('A4', 'portrait');
+
+    return $pdf->download('laporan_retur_pembelian.pdf');
+}
+
+public function exportExcel(Request $request)
+{
+    return Excel::download(
+        new LaporanReturPembelianExport(
+            $request->tgl_awal,
+            $request->tgl_akhir
+        ),
+        'laporan_retur_pembelian.xlsx'
+    );
+}
+
 }

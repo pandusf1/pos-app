@@ -20,4 +20,10 @@ class DReturJual extends Model
     {
         return $this->belongsTo(ReturJual::class, 'no_retur_jual');
     }
+
+    public function barang()
+    {
+        return $this->belongsTo(Barang::class, 'kd_brg', 'kd_brg');
+    }
+
 }

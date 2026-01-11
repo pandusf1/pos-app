@@ -341,11 +341,11 @@
        class="{{ request()->routeIs('laporan.supplier.*') ? 'active' : '' }}">
         📓Laporan Supplier
     </a>
-    <a href="{{ route('laporan.retur.pembelian') }}"
+    <a href="{{ route('laporan.retur.pembelian.index') }}"
     class="{{ request()->routeIs('laporan.retur.pembelian') ? 'active' : '' }}">
         📔 Laporan Retur Pembelian
     </a>
-    <a href="{{ route('laporan.retur.penjualan') }}"
+    <a href="{{ route('laporan.retur.penjualan.index') }}"
     class="{{ request()->routeIs('laporan.retur.penjualan') ? 'active' : '' }}">
         📕 Laporan Retur Penjualan
     </a>

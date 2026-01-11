@@ -239,7 +239,7 @@ body {
             <div class="col-md-3">
                 <div class="menu-card">
                     <h6>Retur Pembelian</h6>
-                    <a href="{{ route('laporan.retur.pembelian') }}">
+                    <a href="{{ route('laporan.retur.pembelian.index') }}">
                         Lihat →
                     </a>
                 </div>
@@ -248,7 +248,7 @@ body {
             <div class="col-md-3">
                 <div class="menu-card">
                     <h6>Retur Penjualan</h6>
-                    <a href="{{ route('laporan.retur.penjualan') }}">
+                    <a href="{{ route('laporan.retur.penjualan.index') }}">
                         Lihat →
                     </a>
                 </div>

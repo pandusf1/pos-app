@@ -8,6 +8,9 @@ use App\Models\Jual;
 use App\Models\Barang;
 use App\Models\ReturJual;
 use App\Models\DReturJual;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ReturPenjualanExport;
 
 class ReturPenjualanController extends Controller
 {
@@ -139,5 +142,37 @@ class ReturPenjualanController extends Controller
 
         return view('retur_jual.laporan', compact('retur'));
     }
+
+    // ================= EXPORT PDF =================
+public function exportPDF(Request $request)
+{
+    $query = ReturJual::with(['detail.barang', 'jual.konsumen']);
+
+    if ($request->filled('tgl_awal') && $request->filled('tgl_akhir')) {
+        $query->whereBetween('tgl_retur', [
+            $request->tgl_awal,
+            $request->tgl_akhir
+        ]);
+    }
+
+    $retur = $query->orderBy('tgl_retur', 'desc')->get();
+
+    $pdf = Pdf::loadView('retur_jual.pdf', [
+        'retur' => $retur,
+        'tgl_awal' => $request->tgl_awal,
+        'tgl_akhir' => $request->tgl_akhir,
+    ])->setPaper('A4', 'portrait');
+
+    return $pdf->download('laporan-retur-penjualan.pdf');
+}
+
+// ================= EXPORT EXCEL =================
+public function exportExcel()
+{
+    return Excel::download(
+        new ReturPenjualanExport,
+        'laporan-retur-penjualan.xlsx'
+    );
+}
 
 }

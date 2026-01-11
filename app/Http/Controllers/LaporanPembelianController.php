@@ -8,6 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\PembelianExport;
 
+
 class LaporanPembelianController extends Controller
 {
     public function index(Request $request)
