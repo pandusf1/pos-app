@@ -15,14 +15,16 @@ use App\Exports\LaporanReturPembelianExport;
 
 class ReturPembelianController extends Controller
 {
+    // =========================
     // HALAMAN RETUR PEMBELIAN
+    // =========================
     public function index()
     {
         $pembelian = Beli::with('detail')->get()->map(function ($beli) {
             $totalSisa = 0;
 
             foreach ($beli->detail as $d) {
-                $sudahDiretur = \App\Models\DReturBeli::where('kd_brg', $d->kd_brg)
+                $sudahDiretur = DReturBeli::where('kd_brg', $d->kd_brg)
                     ->whereHas('retur', function ($q) use ($beli) {
                         $q->where('no_beli', $beli->no_beli);
                     })
@@ -38,54 +40,56 @@ class ReturPembelianController extends Controller
         return view('retur_beli.index', compact('pembelian'));
     }
 
+    // =========================
     // SIMPAN RETUR PEMBELIAN
+    // =========================
     public function store(Request $request)
     {
         try {
             $request->validate([
-                'no_beli'       => 'required',
-                'qty_retur'     => 'nullable|array',
-                'qty_retur.*'   => 'integer|min:0'
+                'no_beli'     => 'required',
+                'qty_retur'   => 'nullable|array',
+                'qty_retur.*' => 'integer|min:0'
             ]);
-    
+
             DB::transaction(function () use ($request) {
-    
+
                 $pembelian = Beli::with('detail')
                     ->where('no_beli', $request->no_beli)
                     ->firstOrFail();
-    
+
                 $retur = ReturBeli::create([
                     'no_beli'     => $pembelian->no_beli,
                     'tgl_retur'   => now(),
                     'total_retur' => 0
                 ]);
-    
+
                 $total = 0;
                 $adaRetur = false;
-    
+
                 foreach ($pembelian->detail as $d) {
                     $qtyRetur = $request->qty_retur[$d->kd_brg] ?? 0;
+
                     if ($qtyRetur > 0) {
-                        
                         $adaRetur = true;
 
-                        // 🔴 HITUNG YANG SUDAH DIRETUR
+                        // 🔐 HITUNG YANG SUDAH DIRETUR
                         $sudahDiretur = DReturBeli::where('kd_brg', $d->kd_brg)
                             ->whereHas('retur', function ($q) use ($pembelian) {
                                 $q->where('no_beli', $pembelian->no_beli);
                             })
                             ->sum('qty_retur');
-                
+
                         $sisa = $d->jml_beli - $sudahDiretur;
-                
+
                         if ($qtyRetur > $sisa) {
                             throw new \Exception(
                                 "Qty retur {$d->kd_brg} melebihi sisa. Sisa: {$sisa}"
                             );
                         }
-                 
+
                         $subtotal = $qtyRetur * $d->harga_beli;
-                
+
                         DReturBeli::create([
                             'no_retur_beli' => $retur->no_retur_beli,
                             'kd_brg'        => $d->kd_brg,
@@ -93,39 +97,42 @@ class ReturPembelianController extends Controller
                             'harga_beli'    => $d->harga_beli,
                             'subtotal'      => $subtotal
                         ]);
-                
+
+                        // STOK BERKURANG
                         Barang::where('kd_brg', $d->kd_brg)
                             ->decrement('stok', $qtyRetur);
-                
+
                         $total += $subtotal;
                     }
-                } 
-                
+                }
+
                 if (!$adaRetur) {
                     throw new \Exception('Tidak ada barang yang diretur');
-                }                
-    
+                }
+
                 $retur->update(['total_retur' => $total]);
             });
-    
+
             return response()->json([
-                'status' => 'success',
+                'status'  => 'success',
                 'message' => 'Retur pembelian berhasil disimpan'
             ]);
-    
+
         } catch (\Throwable $e) {
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => $e->getMessage()
             ], 500);
         }
-    }   
+    }
 
+    // =========================
+    // LAPORAN RETUR (WEB)
+    // =========================
     public function laporan(Request $request)
     {
         $query = ReturBeli::with(['detail', 'detail.barang']);
 
-        // 🔍 filter tanggal (opsional)
         if ($request->filled('tgl_awal') && $request->filled('tgl_akhir')) {
             $query->whereBetween('tgl_retur', [
                 $request->tgl_awal,
@@ -138,36 +145,49 @@ class ReturPembelianController extends Controller
         return view('retur_beli.laporan', compact('retur'));
     }
 
+    // =========================
+    // EXPORT PDF (ADA TOTAL)
+    // =========================
     public function exportPDF(Request $request)
-{
-    $query = ReturBeli::with(['detail', 'detail.barang']);
+    {
+        $query = ReturBeli::with(['detail', 'detail.barang']);
 
-    if ($request->filled('tgl_awal') && $request->filled('tgl_akhir')) {
-        $query->whereBetween('tgl_retur', [
-            $request->tgl_awal,
-            $request->tgl_akhir
-        ]);
+        if ($request->filled('tgl_awal') && $request->filled('tgl_akhir')) {
+            $query->whereBetween('tgl_retur', [
+                $request->tgl_awal,
+                $request->tgl_akhir
+            ]);
+        }
+
+        $retur = $query->orderBy('tgl_retur', 'desc')->get();
+
+        // 🔥 HITUNG GRAND TOTAL
+        $grandTotal = 0;
+        foreach ($retur as $r) {
+            foreach ($r->detail as $d) {
+                $grandTotal += $d->subtotal;
+            }
+        }
+
+        $pdf = Pdf::loadView(
+            'retur_beli.pdf',
+            compact('retur', 'grandTotal')
+        )->setPaper('A4', 'portrait');
+
+        return $pdf->download('laporan_retur_pembelian.pdf');
     }
 
-    $retur = $query->orderBy('tgl_retur', 'desc')->get();
-
-    $pdf = Pdf::loadView(
-        'retur_beli.pdf',
-        compact('retur')
-    )->setPaper('A4', 'portrait');
-
-    return $pdf->download('laporan_retur_pembelian.pdf');
-}
-
-public function exportExcel(Request $request)
-{
-    return Excel::download(
-        new LaporanReturPembelianExport(
-            $request->tgl_awal,
-            $request->tgl_akhir
-        ),
-        'laporan_retur_pembelian.xlsx'
-    );
-}
-
+    // =========================
+    // EXPORT EXCEL
+    // =========================
+    public function exportExcel(Request $request)
+    {
+        return Excel::download(
+            new LaporanReturPembelianExport(
+                $request->tgl_awal,
+                $request->tgl_akhir
+            ),
+            'laporan_retur_pembelian.xlsx'
+        );
+    }
 }
