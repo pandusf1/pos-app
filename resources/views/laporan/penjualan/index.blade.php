@@ -102,6 +102,17 @@ function sortLink($label, $field) {
                 </tr>
             </thead>
             <tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6" class="text-end fw-bold fs-6">
+                        TOTAL PENJUALAN
+                    </td>
+                    <td class="text-center fw-bold fs-6 text-success">
+                        Rp {{ number_format($totalPenjualan,0,',','.') }}
+                    </td>
+                </tr>
+            </tfoot>
+
             @forelse($data as $d)
                
                 <tr>
