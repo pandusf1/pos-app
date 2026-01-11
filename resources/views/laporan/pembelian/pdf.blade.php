@@ -61,6 +61,14 @@
             font-size: 11px;
         }
 
+        /* Gaya tambahan untuk baris total */
+        table tfoot td {
+            background: #f1f5f9;
+            font-weight: bold;
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
         .text-center {
             text-align: center;
         }
@@ -68,22 +76,10 @@
         .text-right {
             text-align: right;
         }
-
-        .footer {
-            width: 100%;
-            margin-top: 50px;
-        }
-
-        .footer .right {
-            width: 40%;
-            float: right;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
 
-    <!-- KOP -->
     <div class="kop">
         <h2>LAPORAN PEMBELIAN</h2>
         <h2>KEJORA MART</h2>
@@ -94,12 +90,10 @@
     <div class="line"></div>
     <div class="line-thin"></div>
 
-    <!-- JUDUL -->
     <div class="title">
         LAPORAN PEMBELIAN
     </div>
 
-    <!-- TABEL -->
     <table>
         <thead>
             <tr>
@@ -113,7 +107,8 @@
             </tr>
         </thead>
         <tbody>
-            @php $totalSeluruh = 0; @endphp {{-- Inisialisasi variabel --}}
+            @php $totalKeseluruhan = 0; @endphp
+            
             @foreach($data as $d)
             <tr>
                 <td class="text-center">{{ $d->no_beli }}</td>
@@ -121,23 +116,27 @@
                 <td>{{ $d->nm_sup }}</td>
                 <td>{{ $d->nm_brg }}</td>
                 <td class="text-center">{{ $d->jml_beli }}</td>
-                <td class="text-right">Rp {{ number_format($d->harga_beli,0,',','.') }}</td>
-                <td class="text-right">Rp {{ number_format($d->total,0,',','.') }}</td>
+                <td class="text-right">
+                    Rp {{ number_format($d->harga_beli,0,',','.') }}
+                </td>
+                <td class="text-right">
+                    Rp {{ number_format($d->total,0,',','.') }}
+                </td>
             </tr>
-            @php $totalSeluruh += $d->total; @endphp {{-- Tambahkan setiap total ke total seluruh --}}
+            @php $totalKeseluruhan += $d->total; @endphp
             @endforeach
         </tbody>
+        
         <tfoot>
             <tr>
-                <th colspan="6" class="text-right">TOTAL KESELURUHAN</th>
-                <th class="text-right">
-                    Rp {{ number_format($totalSeluruh, 0, ',', '.') }}
-                </th>
+                <td colspan="6" class="text-right">TOTAL KESELURUHAN</td>
+                <td class="text-right">
+                    Rp {{ number_format($totalKeseluruhan, 0, ',', '.') }}
+                </td>
             </tr>
         </tfoot>
     </table>
 
-    <!-- FOOTER -->
     <br><br><br>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:none;">
@@ -160,12 +159,10 @@
                 Mengetahui,
             </td>
         </tr>
-
         <tr>
             <td height="70" style="border:none;"></td>
             <td height="70" style="border:none;"></td>
         </tr>
-
         <tr>
             <td align="center" style="border:none;">
                 <strong>{{ auth()->user()->name ?? 'Admin' }}</strong>
