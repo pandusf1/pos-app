@@ -113,6 +113,7 @@
             </tr>
         </thead>
         <tbody>
+            @php $totalSeluruh = 0; @endphp {{-- Inisialisasi variabel --}}
             @foreach($data as $d)
             <tr>
                 <td class="text-center">{{ $d->no_beli }}</td>
@@ -120,15 +121,20 @@
                 <td>{{ $d->nm_sup }}</td>
                 <td>{{ $d->nm_brg }}</td>
                 <td class="text-center">{{ $d->jml_beli }}</td>
-                <td class="text-right">
-                    Rp {{ number_format($d->harga_beli,0,',','.') }}
-                </td>
-                <td class="text-right">
-                    Rp {{ number_format($d->total,0,',','.') }}
-                </td>
+                <td class="text-right">Rp {{ number_format($d->harga_beli,0,',','.') }}</td>
+                <td class="text-right">Rp {{ number_format($d->total,0,',','.') }}</td>
             </tr>
+            @php $totalSeluruh += $d->total; @endphp {{-- Tambahkan setiap total ke total seluruh --}}
             @endforeach
         </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="6" class="text-right">TOTAL KESELURUHAN</th>
+                <th class="text-right">
+                    Rp {{ number_format($totalSeluruh, 0, ',', '.') }}
+                </th>
+            </tr>
+        </tfoot>
     </table>
 
     <!-- FOOTER -->
