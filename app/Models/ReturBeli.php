@@ -25,9 +25,9 @@ class ReturBeli extends Model
         return $this->hasMany(DReturBeli::class, 'no_retur_beli');
     }
 
-    public function beli()
+    public function Beli()
     {
-        return $this->belongsTo(beli::class, 'no_beli', 'no_beli');
+        return $this->belongsTo(Beli::class, 'no_beli', 'no_beli');
     }
 
 }
