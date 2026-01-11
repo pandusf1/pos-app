@@ -60,7 +60,7 @@
                 <tr>
                     <td class="text-center fw-bold">{{ $r->no_retur_beli }}</td>
                     <td class="text-center text-muted small">{{ $r->no_beli }}</td>
-                    <td>{{ $r->beli->supplier->nm_sup ?? '-' }}</td>
+                    <td>{{ $r->Beli->supplier->nm_sup ?? '-' }}</td>
                     <td>{{ $d->barang->nm_brg ?? $d->kd_brg }}</td>
                     <td class="text-center fw-bold">{{ $d->qty_retur }}</td>
                     <td class="text-end">Rp {{ number_format($d->harga_beli, 0, ',', '.') }}</td>
