@@ -120,6 +120,20 @@
             </tr>
             @endforeach
         </tbody>
+
+        <tfoot>
+    <tr>
+        <td colspan="6"
+            style="text-align:right; font-weight:bold; background:#f1f5f9;">
+            TOTAL PENJUALAN
+        </td>
+        <td
+            style="text-align:right; font-weight:bold; background:#f1f5f9;">
+            Rp {{ number_format($totalPenjualan,0,',','.') }}
+        </td>
+    </tr>
+</tfoot>
+
     </table>
 
     <!-- FOOTER -->
