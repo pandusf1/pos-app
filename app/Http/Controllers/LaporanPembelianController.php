@@ -12,41 +12,56 @@ class LaporanPembelianController extends Controller
 {
     public function index(Request $request)
     {
-        $query = $this->getFilteredData($request);
+        $query = ViewPembelian::query();
 
-        // 🔒 whitelist sorting agar aman
-        $allowedSort = [
-            'tgl_beli', 'no_beli', 'nm_sup', 'nm_brg', 'jml_beli', 'total'
-        ];
+        // ================= FILTER TANGGAL =================
+        if ($request->start_date) {
+            $query->where('tgl_beli', '>=', $request->start_date);
+        }
 
-        $sort = in_array($request->sort, $allowedSort)
-            ? $request->sort
-            : 'tgl_beli';
+        if ($request->end_date) {
+            $query->where('tgl_beli', '<=', $request->end_date);
+        }
 
-        $dir = $request->dir === 'asc' ? 'asc' : 'desc';
+        // ================= PENCARIAN =================
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('no_beli', 'like', "%{$request->search}%")
+                  ->orWhere('nm_sup', 'like', "%{$request->search}%")
+                  ->orWhere('nm_brg', 'like', "%{$request->search}%");
+            });
+        }
 
-        $data = $query
-            ->orderBy($sort, $dir)
-            ->paginate($request->per_page ?? 10)
-            ->withQueryString();
+        // ================= TOTAL (SEBELUM PAGINATION) =================
+        $totalPembelian = (clone $query)->sum('total');
 
-        return view('laporan.pembelian.index', compact('data'));
+        // ================= SORTING =================
+        $sort = $request->sort ?? 'tgl_beli';
+        $dir  = $request->dir ?? 'desc';
+        $query->orderBy($sort, $dir);
+
+        // ================= PAGINATION =================
+        $data = $query->paginate($request->per_page ?? 10)
+                      ->withQueryString();
+
+        return view('laporan.pembelian.index', compact('data', 'totalPembelian'));
     }
 
-    // ================= PDF =================
+    // ================= EXPORT PDF =================
     public function exportPDF(Request $request)
     {
         $data = $this->getFilteredData($request)->get();
+        $totalPembelian = $data->sum('total');
 
-        $pdf = Pdf::loadView('laporan.pembelian.pdf', [
-            'data' => $data,
-            'request' => $request
-        ])->setPaper('A4', 'landscape');
+        $pdf = Pdf::loadView(
+            'laporan.pembelian.pdf',
+            compact('data', 'totalPembelian')
+        )->setPaper('A4', 'portrait');
 
         return $pdf->download('laporan-pembelian.pdf');
     }
 
-    // ================= EXCEL =================
+    // ================= EXPORT EXCEL =================
     public function exportExcel(Request $request)
     {
         return Excel::download(
@@ -55,26 +70,24 @@ class LaporanPembelianController extends Controller
         );
     }
 
-    // ================= FILTER CORE =================
+    // ================= QUERY FILTER BERSAMA =================
     private function getFilteredData(Request $request)
     {
         $query = ViewPembelian::query();
 
-        // tanggal
         if ($request->start_date) {
-            $query->whereDate('tgl_beli', '>=', $request->start_date);
+            $query->where('tgl_beli', '>=', $request->start_date);
         }
 
         if ($request->end_date) {
-            $query->whereDate('tgl_beli', '<=', $request->end_date);
+            $query->where('tgl_beli', '<=', $request->end_date);
         }
 
-        // search
         if ($request->search) {
             $query->where(function ($q) use ($request) {
-                $q->where('no_beli', 'like', '%' . $request->search . '%')
-                  ->orWhere('nm_sup', 'like', '%' . $request->search . '%')
-                  ->orWhere('nm_brg', 'like', '%' . $request->search . '%');
+                $q->where('no_beli', 'like', "%{$request->search}%")
+                  ->orWhere('nm_sup', 'like', "%{$request->search}%")
+                  ->orWhere('nm_brg', 'like', "%{$request->search}%");
             });
         }
 
